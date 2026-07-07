@@ -1,6 +1,7 @@
 import pytest
 
 from apt import web_main
+from apt.api.config import WebConfig
 
 
 def test_load_config_defaults(monkeypatch):
@@ -23,3 +24,33 @@ def test_app_serves_db_requests_across_threads(tmp_path, web_config):
     app = create_app(conn, web_config)
     client = TestClient(app)
     assert client.get("/api/listings", params={"city": "חיפה"}).status_code == 200
+
+
+def make_config(**overrides):
+    base = dict(
+        db_path="data/apt.db", secret_key="dev-secret-change-me",
+        google_client_id="", google_client_secret="",
+        base_url="https://apt.example.com", bot_username="", admin_emails=[],
+    )
+    base.update(overrides)
+    return WebConfig(**base)
+
+
+def test_refuses_default_secret_on_https():
+    with pytest.raises(SystemExit):
+        web_main.refuse_default_secret(make_config())
+
+
+def test_allows_default_secret_on_http_dev():
+    web_main.refuse_default_secret(make_config(base_url="http://localhost:8000"))
+
+
+def test_allows_real_secret_on_https():
+    web_main.refuse_default_secret(make_config(secret_key="s3cret"))
+
+
+def test_uvicorn_kwargs_behind_proxy(monkeypatch):
+    monkeypatch.setenv("APT_BEHIND_PROXY", "1")
+    assert web_main.uvicorn_kwargs() == {"proxy_headers": True, "forwarded_allow_ips": "*"}
+    monkeypatch.delenv("APT_BEHIND_PROXY")
+    assert web_main.uvicorn_kwargs() == {}
