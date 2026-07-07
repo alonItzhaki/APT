@@ -80,6 +80,8 @@ class ListingRepo:
         self._conn = conn
 
     def upsert(self, listing: Listing, now: datetime) -> UpsertResult:
+        # Last-scrape-wins on every field: callers must pass fully-populated
+        # listings — a partial one silently nulls previously-known data.
         existing = self._conn.execute(
             "SELECT price FROM listings WHERE id = ?", (listing.id,)
         ).fetchone()
