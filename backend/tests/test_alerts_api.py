@@ -65,3 +65,16 @@ def test_cannot_touch_others_alert(client, conn, web_config):
     login(client, conn, web_config)
     assert client.put(f"/api/alerts/{foreign.id}", json=VALID).status_code == 404
     assert client.delete(f"/api/alerts/{foreign.id}").status_code == 404
+
+
+def test_mutating_endpoints_require_auth(client):
+    assert client.put("/api/alerts/1", json=VALID).status_code == 401
+    assert client.post("/api/alerts/1/active", json={"active": False}).status_code == 401
+    assert client.delete("/api/alerts/1").status_code == 401
+
+
+def test_cannot_toggle_others_alert(client, conn, web_config):
+    other = UserRepo(conn).upsert_google_user("g-3", "third@example.com", FIXED_NOW)
+    foreign = AlertRepo(conn).create(other.id, "x", AlertFilters(), ["telegram"], FIXED_NOW)
+    login(client, conn, web_config)
+    assert client.post(f"/api/alerts/{foreign.id}/active", json={"active": False}).status_code == 404
