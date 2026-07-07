@@ -73,4 +73,8 @@ def email_subject(event: MatchEvent) -> str:
 
 def email_html(event: MatchEvent) -> str:
     body = "<br>\n".join(_lines(event))
-    return f'<!DOCTYPE html>\n<html dir="rtl" lang="he"><body>\n{body}\n</body></html>'
+    return (
+        '<!DOCTYPE html>\n<html dir="rtl" lang="he">'
+        '<head><meta charset="utf-8"></head>'
+        f"<body>\n{body}\n</body></html>"
+    )
