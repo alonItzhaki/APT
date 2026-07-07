@@ -46,6 +46,12 @@ def test_callback_rejects_bad_state(client):
     assert response.status_code == 400
 
 
+def test_callback_rejects_missing_state_cookie(client):
+    # No apt_oauth_state cookie present — each test gets a fresh client fixture.
+    response = client.get("/api/auth/callback?code=c&state=whatever", follow_redirects=False)
+    assert response.status_code == 400
+
+
 def test_callback_creates_user_and_session(client, conn):
     session_ctx, _ = make_google_session()
     client.cookies.set("apt_oauth_state", "st-1")

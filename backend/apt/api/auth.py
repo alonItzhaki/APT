@@ -6,6 +6,7 @@ import aiohttp
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 
+from apt.api.config import WebConfig
 from apt.api.deps import require_user
 from apt.api.session import SESSION_COOKIE, SESSION_TTL_DAYS, sign_session
 from apt.repo.users import UserRepo
@@ -45,7 +46,7 @@ def login(request: Request) -> RedirectResponse:
     return response
 
 
-async def _exchange_code(config, code: str) -> dict:
+async def _exchange_code(config: WebConfig, code: str) -> dict:
     timeout = aiohttp.ClientTimeout(total=30)
     async with aiohttp.ClientSession(timeout=timeout) as session:
         async with session.post(GOOGLE_TOKEN_URL, data={
@@ -90,6 +91,7 @@ async def callback(request: Request, code: str, state: str) -> RedirectResponse:
 def logout() -> JSONResponse:
     response = JSONResponse({"ok": True})
     response.delete_cookie(SESSION_COOKIE)
+    response.delete_cookie(STATE_COOKIE)
     return response
 
 

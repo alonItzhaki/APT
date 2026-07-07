@@ -11,12 +11,9 @@ FIXED_NOW = datetime(2026, 7, 7, 12, 0, tzinfo=timezone.utc)
 
 @pytest.fixture
 def conn(tmp_path):
-    # Use check_same_thread=False to allow FastAPI TestClient to access db from different thread
-    import sqlite3
-    connection = sqlite3.connect(tmp_path / "test.db", check_same_thread=False)
-    connection.row_factory = sqlite3.Row
-    connection.execute("PRAGMA journal_mode=WAL")
-    connection.execute("PRAGMA foreign_keys=ON")
+    # check_same_thread=False is required because FastAPI's TestClient runs the
+    # ASGI app in a background thread while the fixture lives on the test thread.
+    connection = connect(tmp_path / "test.db", check_same_thread=False)
     migrate(connection)
     yield connection
     connection.close()
@@ -42,18 +39,17 @@ def client(conn, web_config):
 
     app = create_app(conn, web_config, now_fn=lambda: FIXED_NOW)
 
-    # Wrap TestClient to handle cookie deletion properly since httpx doesn't handle Max-Age=0 well
+    # Workaround: httpx 0.28 does not honour Max-Age=0 for cookie deletion, so
+    # we manually evict cookies from the jar for every Set-Cookie header that
+    # carries Max-Age=0.
     client = TestClient(app)
     original_request = client.request
 
     def request_with_cookie_cleanup(*args, **kwargs):
         response = original_request(*args, **kwargs)
-        # Check if response has Set-Cookie headers with Max-Age=0 and remove from cookies jar
-        set_cookie = response.headers.get('set-cookie', '')
-        if 'Max-Age=0' in set_cookie or 'max-age=0' in set_cookie:
-            # Extract cookie name from Set-Cookie header
-            if '=' in set_cookie:
-                cookie_name = set_cookie.split('=')[0].strip()
+        for header in response.headers.get_list("set-cookie"):
+            if "Max-Age=0" in header or "max-age=0" in header:
+                cookie_name = header.split("=")[0].strip()
                 if cookie_name in client.cookies:
                     client.cookies.delete(cookie_name)
         return response

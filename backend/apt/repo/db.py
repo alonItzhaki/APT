@@ -106,8 +106,8 @@ MIGRATIONS: list[str] = [
 ]
 
 
-def connect(path: str | Path) -> sqlite3.Connection:
-    connection = sqlite3.connect(path)
+def connect(path: str | Path, check_same_thread: bool = True) -> sqlite3.Connection:
+    connection = sqlite3.connect(path, check_same_thread=check_same_thread)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA journal_mode=WAL")
     connection.execute("PRAGMA foreign_keys=ON")
