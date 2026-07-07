@@ -4,7 +4,7 @@ from typing import Callable
 
 from fastapi import FastAPI
 
-from apt.api import auth
+from apt.api import auth, listings
 from apt.api.config import WebConfig
 
 
@@ -23,5 +23,6 @@ def create_app(
         return {"status": "ok"}
 
     app.include_router(auth.router)
+    app.include_router(listings.router)
 
     return app
