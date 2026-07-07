@@ -36,6 +36,21 @@ export function filtersToAlertFilters(values: FilterValues): AlertFilters {
   return { locations: [{ city, ...(neighborhood ? { neighborhood } : {}) }], ...rest };
 }
 
+export function alertFiltersToValues(filters: AlertFilters): FilterValues {
+  const location = filters.locations[0] ?? { city: "" };
+  return {
+    city: location.city,
+    neighborhood: location.neighborhood ?? "",
+    min_price: filters.min_price?.toString() ?? "",
+    max_price: filters.max_price?.toString() ?? "",
+    min_rooms: filters.min_rooms?.toString() ?? "",
+    max_rooms: filters.max_rooms?.toString() ?? "",
+    min_size_sqm: filters.min_size_sqm?.toString() ?? "",
+    require_mamad: filters.require_mamad ?? false,
+    require_elevator: filters.require_elevator ?? false,
+  };
+}
+
 interface Props {
   value: FilterValues;
   onChange: (value: FilterValues) => void;

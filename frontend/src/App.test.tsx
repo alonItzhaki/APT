@@ -13,6 +13,9 @@ function stubMe(me: unknown, status = 200) {
       if (url === "/api/auth/logout") {
         return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ ok: true }) });
       }
+      if (url === "/api/alerts") {
+        return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ alerts: [] }) });
+      }
       return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({}) });
     })
   );
