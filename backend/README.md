@@ -48,6 +48,10 @@ TELEGRAM_BOT_TOKEN=123:abc APT_DB_PATH=data/apt.db APT_SITE_URL=https://apt.exam
 The scraper delivers real notifications when `TELEGRAM_BOT_TOKEN` (Telegram) and/or
 `BREVO_API_KEY` + `APT_EMAIL_FROM` (email) are set; otherwise it logs matches only.
 
+## Production
+
+For full production setup (VM provisioning, Docker, TLS, backups, and operational notes) see [`../DEPLOY.md`](../DEPLOY.md).
+
 ## Running the web API
 
 ```bash
