@@ -22,6 +22,7 @@ After the instance is up:
 ```bash
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
+sudo apt-get install -y sqlite3   # used by deploy/backup.sh on the host
 ```
 
 Log out and back in so the group membership takes effect, then verify:
@@ -78,7 +79,9 @@ docker compose ps
 
 # Health endpoint
 curl localhost/healthz
-# Expected: {"status":"ok"}
+# Expected: {"status":"ok"} — while APT_DOMAIN=:80; once a real domain is set,
+# Caddy only answers on that hostname, so use the domain URL below instead
+
 
 # HTTPS + domain
 curl https://apt.example.com/healthz
@@ -105,7 +108,15 @@ docker compose exec scraper python -m apt.canary
 
 ## 5. Backups
 
-**Crontab** — add this to the `ubuntu` user's crontab (`crontab -e`):
+The containers run as root, so the SQLite files under `./data` (including the WAL/SHM sidecars a hot backup must read) are root-owned — **backups and restores run as root on the host**.
+
+First, run one backup by hand (this also creates `backups/` so the cron log redirect works):
+
+```bash
+sudo -E ./deploy/backup.sh
+```
+
+**Crontab** — add this to root's crontab (`sudo crontab -e`):
 
 ```
 17 3 * * * cd /home/ubuntu/APT && set -a && . ./.env && set +a && ./deploy/backup.sh >> backups/backup.log 2>&1
@@ -121,8 +132,8 @@ docker compose exec scraper python -m apt.canary
 # Stop write-capable services first
 docker compose stop web scraper bot
 
-# Restore (file path is relative to the APT directory)
-./deploy/restore.sh backups/<file>.db.gz
+# Restore (file path is relative to the APT directory; root owns data/)
+sudo ./deploy/restore.sh backups/<file>.db.gz
 
 # Bring services back up
 docker compose start web scraper
