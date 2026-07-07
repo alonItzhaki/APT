@@ -158,7 +158,10 @@ class ListingRepo:
         offset: int = 0,
     ) -> list[Listing]:
         where, params = _search_clauses(filters)
-        order = "first_seen DESC" if sort == "newest" else "price IS NULL, price ASC"
+        orders = {"newest": "first_seen DESC", "price": "price IS NULL, price ASC"}
+        if sort not in orders:
+            raise ValueError(f"unknown sort: {sort!r}")
+        order = orders[sort]
         rows = self._conn.execute(
             f"SELECT * FROM listings WHERE {where} ORDER BY {order} LIMIT ? OFFSET ?",
             params + [limit, offset],

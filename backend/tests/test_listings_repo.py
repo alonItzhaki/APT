@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+import pytest
+
 from apt.domain.models import AlertFilters, Listing, Location
 from apt.repo.listings import ListingRepo
 
@@ -109,3 +111,18 @@ def test_search_sort_by_price_and_pagination(conn):
     assert priced == ["cheap", "tlv", "pricey"]
     page = repo.search(AlertFilters(), limit=2, offset=2)
     assert len(page) == 2
+
+
+def test_upsert_price_becomes_known(conn):
+    repo = ListingRepo(conn)
+    repo.upsert(make_listing(price=None), T1)
+    result = repo.upsert(make_listing(price=5200), T2)
+    assert result.is_new is False
+    assert result.price_changed is True
+    assert result.old_price is None
+    assert repo.price_history("yad2:a1") == [(5200, T2.isoformat())]
+
+
+def test_search_rejects_unknown_sort(conn):
+    with pytest.raises(ValueError):
+        ListingRepo(conn).search(AlertFilters(), sort="bogus")
