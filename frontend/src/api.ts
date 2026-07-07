@@ -15,7 +15,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new ApiError(response.status, (body as { detail?: string }).detail ?? `שגיאה (${response.status})`);
+    const detail = (body as { detail?: unknown }).detail;
+    throw new ApiError(
+      response.status,
+      typeof detail === "string" ? detail : `שגיאה (${response.status})`
+    );
   }
   return body as T;
 }
