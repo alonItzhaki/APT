@@ -42,9 +42,18 @@ def _parse_floor(value: Any) -> int | None:
     return int(text) if text.isdigit() else None
 
 
+def _to_number(value: Any, cast) -> int | float | None:
+    if value is None:
+        return None
+    try:
+        return cast(value)
+    except (TypeError, ValueError):
+        return None
+
+
 def parse_item(item: dict[str, Any]) -> Listing | None:
     token = item.get("token")
-    if not token:
+    if token is None or token == "":
         return None
     address = item.get("address") or {}
     city = _text(address.get("city"))
@@ -53,9 +62,6 @@ def parse_item(item: dict[str, Any]) -> Listing | None:
     details = item.get("additionalDetails") or {}
     tags = [tag.get("name") for tag in item.get("tags") or [] if tag.get("name")]
     tag_text = " ".join(tags)
-    price = item.get("price")
-    rooms = details.get("roomsCount")
-    size = details.get("squareMeter")
     token = str(token)
     return Listing(
         source="yad2",
@@ -64,9 +70,9 @@ def parse_item(item: dict[str, Any]) -> Listing | None:
         city=city,
         neighborhood=_text(address.get("neighborhood")),
         street=_text(address.get("street")),
-        price=int(price) if price is not None else None,
-        rooms=float(rooms) if rooms is not None else None,
-        size_sqm=int(size) if size is not None else None,
+        price=_to_number(item.get("price"), int),
+        rooms=_to_number(details.get("roomsCount"), float),
+        size_sqm=_to_number(details.get("squareMeter"), int),
         floor=_parse_floor((address.get("house") or {}).get("floor")),
         has_mamad=True if ('ממ"ד' in tag_text or "ממד" in tag_text) else None,
         has_elevator=True if "מעלית" in tag_text else None,

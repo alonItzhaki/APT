@@ -77,3 +77,25 @@ def test_parse_item_missing_token_or_city():
 def test_parse_item_int_token_coerced():
     listing = parse_item({"token": 777, "address": {"city": {"text": "חיפה"}}})
     assert listing.source_id == "777"
+
+
+def test_parse_item_zero_token_kept():
+    listing = parse_item({"token": 0, "address": {"city": {"text": "חיפה"}}})
+    assert listing is not None
+    assert listing.source_id == "0"
+
+
+def test_parse_item_empty_token_dropped():
+    assert parse_item({"token": "", "address": {"city": {"text": "חיפה"}}}) is None
+
+
+def test_parse_item_garbage_numbers_become_none():
+    listing = parse_item({
+        "token": "t1",
+        "price": "4,500",
+        "address": {"city": {"text": "חיפה"}},
+        "additionalDetails": {"roomsCount": "שלוש", "squareMeter": {}},
+    })
+    assert listing.price is None
+    assert listing.rooms is None
+    assert listing.size_sqm is None
