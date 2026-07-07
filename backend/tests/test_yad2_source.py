@@ -1,8 +1,5 @@
 import json
-from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
-
-import pytest
 
 from apt.domain.models import Location
 from apt.sources.yad2 import RENT_DATA_URL, RENT_PAGE_URL, Yad2Source
@@ -60,7 +57,7 @@ def make_source():
 
 
 def make_mock_response(body=None, json_data=None, status=200):
-    """Create a mock response that works as a context manager."""
+    """Create a mock response that works as an async context manager."""
     response = AsyncMock()
     response.status = status
     response.raise_for_status = MagicMock()
@@ -68,24 +65,15 @@ def make_mock_response(body=None, json_data=None, status=200):
         response.text = AsyncMock(return_value=body)
     if json_data is not None:
         response.json = AsyncMock(return_value=json_data)
-
-    # Make it work as an async context manager
     response.__aenter__ = AsyncMock(return_value=response)
     response.__aexit__ = AsyncMock(return_value=None)
     return response
 
 
-def make_mock_session_with_responses(responses_map):
-    """Create a mock session that returns appropriate responses for URLs."""
+def make_mock_session(mock_get_fn):
+    """Wrap a mock_get function in a mock session context manager."""
     session = AsyncMock()
-
-    def mock_get(url, **kwargs):
-        for pattern, response in responses_map.items():
-            if callable(pattern) and pattern(url, kwargs):
-                return response
-        raise Exception(f"Unexpected URL: {url}")
-
-    session.get = mock_get
+    session.get = mock_get_fn
     session.__aenter__ = AsyncMock(return_value=session)
     session.__aexit__ = AsyncMock(return_value=None)
     return session
@@ -94,19 +82,17 @@ def make_mock_session_with_responses(responses_map):
 async def test_fetch_returns_matching_listings():
     source = make_source()
 
-    responses_map = {
-        lambda url, kw: "/rent/" in url and ".json" not in url:
-            make_mock_response(body=NEXT_DATA_HTML),
-        lambda url, kw: "/_next/data/" in url and ".json" in url:
-            make_mock_response(json_data=feed_page([
+    def mock_get(url, **kwargs):
+        if "/rent/" in url and "/_next/data/" not in url:
+            return make_mock_response(body=NEXT_DATA_HTML)
+        elif "/_next/data/" in url and "/rent/" in url:
+            return make_mock_response(json_data=feed_page([
                 feed_item("a1", "קריית ביאליק"),
                 feed_item("elsewhere", "נהריה"),
-            ])),
-    }
+            ]))
+        raise Exception(f"Unexpected URL: {url}")
 
-    session = make_mock_session_with_responses(responses_map)
-
-    with patch("apt.sources.yad2.aiohttp.ClientSession", return_value=session):
+    with patch("apt.sources.yad2.aiohttp.ClientSession", return_value=make_mock_session(mock_get)):
         listings = await source.fetch([Location(city="קריית ביאליק")])
 
     assert [listing.source_id for listing in listings] == ["a1"]
@@ -122,20 +108,15 @@ async def test_fetch_paginates_and_dedupes():
     call_count = [0]
 
     def mock_get(url, **kwargs):
-        if "/rent/" in url and ".json" not in url:
+        if "/rent/" in url and "/_next/data/" not in url:
             return make_mock_response(body=NEXT_DATA_HTML)
-        elif "/_next/data/" in url and ".json" in url:
+        elif "/_next/data/" in url and "/rent/" in url:
             resp = make_mock_response(json_data=responses_list[call_count[0]])
             call_count[0] += 1
             return resp
         raise Exception(f"Unexpected URL: {url}")
 
-    session = AsyncMock()
-    session.get = mock_get
-    session.__aenter__ = AsyncMock(return_value=session)
-    session.__aexit__ = AsyncMock(return_value=None)
-
-    with patch("apt.sources.yad2.aiohttp.ClientSession", return_value=session):
+    with patch("apt.sources.yad2.aiohttp.ClientSession", return_value=make_mock_session(mock_get)):
         listings = await source.fetch([Location(city="קריית ביאליק")])
 
     assert sorted(listing.source_id for listing in listings) == ["a1", "a2"]
@@ -146,24 +127,17 @@ async def test_fetch_retries_server_errors():
     call_count = [0]
 
     def mock_get(url, **kwargs):
-        if "/rent/" in url and ".json" not in url:
+        if "/rent/" in url and "/_next/data/" not in url:
             return make_mock_response(body=NEXT_DATA_HTML)
-        elif "/_next/data/" in url and ".json" in url:
+        elif "/_next/data/" in url and "/rent/" in url:
             if call_count[0] == 0:
                 call_count[0] += 1
                 return make_mock_response(status=503)
             else:
-                return make_mock_response(json_data=feed_page([
-                    feed_item("a1", "קריית ביאליק"),
-                ]))
+                return make_mock_response(json_data=feed_page([feed_item("a1", "קריית ביאליק")]))
         raise Exception(f"Unexpected URL: {url}")
 
-    session = AsyncMock()
-    session.get = mock_get
-    session.__aenter__ = AsyncMock(return_value=session)
-    session.__aexit__ = AsyncMock(return_value=None)
-
-    with patch("apt.sources.yad2.aiohttp.ClientSession", return_value=session):
+    with patch("apt.sources.yad2.aiohttp.ClientSession", return_value=make_mock_session(mock_get)):
         listings = await source.fetch([Location(city="קריית ביאליק")])
 
     assert [listing.source_id for listing in listings] == ["a1"]
@@ -180,21 +154,16 @@ async def test_fetch_neighborhood_location_requires_hood_match():
     source = make_source()
 
     def mock_get(url, **kwargs):
-        if "/rent/" in url and ".json" not in url:
+        if "/rent/" in url and "/_next/data/" not in url:
             return make_mock_response(body=NEXT_DATA_HTML)
-        elif "/_next/data/" in url and ".json" in url:
+        elif "/_next/data/" in url and "/rent/" in url:
             return make_mock_response(json_data=feed_page([
                 feed_item("in-hood", "חיפה", neighborhood="קריית חיים מערבית"),
                 feed_item("other-hood", "חיפה", neighborhood="הדר"),
             ]))
         raise Exception(f"Unexpected URL: {url}")
 
-    session = AsyncMock()
-    session.get = mock_get
-    session.__aenter__ = AsyncMock(return_value=session)
-    session.__aexit__ = AsyncMock(return_value=None)
-
-    with patch("apt.sources.yad2.aiohttp.ClientSession", return_value=session):
+    with patch("apt.sources.yad2.aiohttp.ClientSession", return_value=make_mock_session(mock_get)):
         listings = await source.fetch(
             [Location(city="חיפה", neighborhood="קריית חיים מערבית")]
         )
@@ -205,20 +174,21 @@ async def test_fetch_neighborhood_location_requires_hood_match():
 async def test_enrich_failure_returns_listing_unchanged(caplog):
     source = make_source()
 
-    def mock_get(url, **kwargs):
-        if "/rent/" in url and ".json" not in url:
+    def fetch_mock_get(url, **kwargs):
+        if "/rent/" in url and "/_next/data/" not in url:
             return make_mock_response(body=NEXT_DATA_HTML)
-        elif "/_next/data/" in url and ".json" in url:
+        elif "/_next/data/" in url and "/rent/" in url:
             return make_mock_response(json_data=feed_page([feed_item("a1", "קריית ביאליק")]))
-        raise Exception(f"Unexpected URL: {url}")
+        raise Exception(f"Unexpected URL in fetch: {url}")
 
-    session = AsyncMock()
-    session.get = mock_get
-    session.__aenter__ = AsyncMock(return_value=session)
-    session.__aexit__ = AsyncMock(return_value=None)
+    def enrich_mock_get(url, **kwargs):
+        # Explicitly fail the item-detail request to exercise the failure path.
+        raise OSError("simulated network failure for item detail")
 
-    with patch("apt.sources.yad2.aiohttp.ClientSession", return_value=session):
+    with patch("apt.sources.yad2.aiohttp.ClientSession", return_value=make_mock_session(fetch_mock_get)):
         listings = await source.fetch([Location(city="קריית ביאליק")])
+
+    with patch("apt.sources.yad2.aiohttp.ClientSession", return_value=make_mock_session(enrich_mock_get)):
         enriched = await source.enrich(listings[0])
 
     assert enriched == listings[0]
