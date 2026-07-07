@@ -4,7 +4,7 @@ from typing import Callable
 
 from fastapi import FastAPI
 
-from apt.api import alerts, auth, listings
+from apt.api import account, alerts, auth, listings
 from apt.api.config import WebConfig
 
 
@@ -22,6 +22,7 @@ def create_app(
     def healthz() -> dict:
         return {"status": "ok"}
 
+    app.include_router(account.router)
     app.include_router(alerts.router)
     app.include_router(auth.router)
     app.include_router(listings.router)
