@@ -91,6 +91,13 @@ def connect(path: str | Path) -> sqlite3.Connection:
 def migrate(connection: sqlite3.Connection) -> None:
     current = connection.execute("PRAGMA user_version").fetchone()[0]
     for version, script in enumerate(MIGRATIONS[current:], start=current + 1):
-        with connection:
-            connection.executescript(script)
+        statements = [s.strip() for s in script.split(";") if s.strip()]
+        try:
+            connection.execute("BEGIN")
+            for statement in statements:
+                connection.execute(statement)
             connection.execute(f"PRAGMA user_version = {version}")
+            connection.execute("COMMIT")
+        except Exception:
+            connection.execute("ROLLBACK")
+            raise
