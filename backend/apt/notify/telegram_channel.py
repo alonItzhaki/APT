@@ -34,7 +34,11 @@ class TelegramChannel:
 
     async def _send(self, chat_id: int, text: str) -> None:
         try:
-            await self._bot.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
+            await self._bot.send_message(
+                chat_id=chat_id, text=text, parse_mode="HTML", disable_web_page_preview=False
+            )
         except RetryAfter as exc:
             await asyncio.sleep(exc.retry_after + 1)
-            await self._bot.send_message(chat_id=chat_id, text=text, parse_mode="HTML")
+            await self._bot.send_message(
+                chat_id=chat_id, text=text, parse_mode="HTML", disable_web_page_preview=False
+            )
