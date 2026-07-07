@@ -4,6 +4,7 @@ from typing import Callable
 
 from fastapi import FastAPI
 
+from apt.api import auth
 from apt.api.config import WebConfig
 
 
@@ -20,5 +21,7 @@ def create_app(
     @app.get("/healthz")
     def healthz() -> dict:
         return {"status": "ok"}
+
+    app.include_router(auth.router)
 
     return app
