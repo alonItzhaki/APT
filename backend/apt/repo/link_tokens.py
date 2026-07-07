@@ -14,18 +14,18 @@ class LinkTokenRepo:
             )
 
     def consume(self, token: str, now: datetime, max_age_minutes: int = 15) -> int | None:
-        row = self._conn.execute(
-            "SELECT user_id, created_at, used_at FROM link_tokens WHERE token = ?",
-            (token,),
-        ).fetchone()
-        if row is None or row["used_at"] is not None:
-            return None
-        created = datetime.fromisoformat(row["created_at"])
-        if now - created > timedelta(minutes=max_age_minutes):
-            return None
+        cutoff = (now - timedelta(minutes=max_age_minutes)).isoformat()
         with self._conn:
-            self._conn.execute(
-                "UPDATE link_tokens SET used_at = ? WHERE token = ?",
-                (now.isoformat(), token),
+            cursor = self._conn.execute(
+                """
+                UPDATE link_tokens SET used_at = ?
+                WHERE token = ? AND used_at IS NULL AND created_at >= ?
+                """,
+                (now.isoformat(), token, cutoff),
             )
+            if cursor.rowcount != 1:
+                return None
+            row = self._conn.execute(
+                "SELECT user_id FROM link_tokens WHERE token = ?", (token,)
+            ).fetchone()
         return row["user_id"]
