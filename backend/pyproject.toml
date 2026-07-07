@@ -6,7 +6,7 @@ dependencies = [
     "pydantic>=2.7",
     "aiohttp>=3.9",
     "beautifulsoup4>=4.12",
-    "python-telegram-bot>=22",
+    "python-telegram-bot>=22,<23",
 ]
 
 [project.optional-dependencies]
