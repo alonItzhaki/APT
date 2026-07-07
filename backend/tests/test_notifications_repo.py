@@ -1,3 +1,4 @@
+import sqlite3
 from datetime import datetime, timezone
 
 import pytest
@@ -40,3 +41,10 @@ def test_release_allows_reclaim(conn, ids):
     assert repo.claim(alert_id, listing_id, "telegram", NOW) is True
     repo.release(alert_id, listing_id, "telegram")
     assert repo.claim(alert_id, listing_id, "telegram", NOW) is True
+
+
+def test_claim_with_unknown_alert_raises(conn, ids):
+    repo = NotificationRepo(conn)
+    _, listing_id = ids
+    with pytest.raises(sqlite3.IntegrityError):
+        repo.claim(999999, listing_id, "telegram", NOW)

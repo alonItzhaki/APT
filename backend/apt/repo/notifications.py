@@ -17,8 +17,10 @@ class NotificationRepo:
                     (alert_id, listing_id, channel, now.isoformat()),
                 )
             return True
-        except sqlite3.IntegrityError:
-            return False
+        except sqlite3.IntegrityError as exc:
+            if "UNIQUE constraint failed" in str(exc):
+                return False
+            raise
 
     def release(self, alert_id: int, listing_id: str, channel: str) -> None:
         with self._conn:
