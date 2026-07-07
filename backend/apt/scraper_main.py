@@ -1,13 +1,18 @@
 import asyncio
 import logging
 import os
+import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
 from pydantic import BaseModel
+from telegram import Bot
 
 from apt.cycle import run_cycle
 from apt.notify.base import LogNotifier
+from apt.notify.email_channel import EmailChannel
+from apt.notify.notifier import ChannelNotifier
+from apt.notify.telegram_channel import TelegramChannel
 from apt.repo.db import connect, migrate
 from apt.sources.yad2 import Yad2Source
 
@@ -26,6 +31,20 @@ def load_config() -> ScraperConfig:
     )
 
 
+def build_notifier(conn: sqlite3.Connection):
+    channels: dict = {}
+    token = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    if token:
+        channels["telegram"] = TelegramChannel(conn, Bot(token))
+    api_key = os.getenv("BREVO_API_KEY", "")
+    from_email = os.getenv("APT_EMAIL_FROM", "")
+    if api_key and from_email:
+        channels["email"] = EmailChannel(api_key, from_email)
+    if channels:
+        return ChannelNotifier(conn, channels)
+    return LogNotifier()
+
+
 async def main() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s"
@@ -34,7 +53,7 @@ async def main() -> None:
     config.db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = connect(config.db_path)
     migrate(conn)
-    notifier = LogNotifier()
+    notifier = build_notifier(conn)
     logger.info("scraper started (db=%s, interval=%ss)", config.db_path, config.interval_seconds)
     while True:
         # A fresh source per cycle re-discovers the build_id, surviving Yad2 redeploys.

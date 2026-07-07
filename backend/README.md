@@ -9,7 +9,8 @@ the scraper, bot, and web API services build on it (plans 2-4).
 - `apt/domain/` — Pydantic models, match events, and the pure `listing_matches` function
 - `apt/repo/` — SQLite (WAL) repositories; all persistence goes through here
 - `apt/sources/` — listing sources; `yad2_parse` (pure parsing) + `yad2` (HTTP client) + city registry
-- `apt/notify/` — notifier protocol; `LogNotifier` placeholder until plan 3's channels
+- `apt/notify/` — delivery: formatting, `ChannelNotifier` (exactly-once), Telegram + Brevo email channels
+- `apt/bot.py` / `apt/bot_main.py` — Telegram bot (linking, /matches, /pause, /resume)
 - `apt/cycle.py` — the scrape-and-match cycle
 - `apt/scraper_main.py` — scraper service entrypoint
 
@@ -37,3 +38,12 @@ APT_DB_PATH=data/apt.db APT_SCRAPE_INTERVAL_SECONDS=900 python -m apt.scraper_ma
 
 New Yad2 cities are added in `apt/sources/yad2_locations.py` (`KNOWN_CITIES`).
 Yad2 endpoint/JSON contract: `docs/superpowers/specs/2026-07-07-yad2-reference-notes.md`.
+
+## Running the bot
+
+```bash
+TELEGRAM_BOT_TOKEN=123:abc APT_DB_PATH=data/apt.db APT_SITE_URL=https://apt.example.com python -m apt.bot_main
+```
+
+The scraper delivers real notifications when `TELEGRAM_BOT_TOKEN` (Telegram) and/or
+`BREVO_API_KEY` + `APT_EMAIL_FROM` (email) are set; otherwise it logs matches only.
