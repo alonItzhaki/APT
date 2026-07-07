@@ -50,3 +50,14 @@ def test_bot_config_from_env(monkeypatch):
     config = bot_main.load_config()
     assert config.token == "123:abc"
     assert config.site_url == "https://apt.co.il"
+
+
+def test_build_sources_registers_both_and_seeds_facebook_disabled(monkeypatch, tmp_path):
+    from apt.repo.source_state import SourceStateRepo
+
+    monkeypatch.delenv("APT_FB_SESSION_FILE", raising=False)
+    conn = make_conn(tmp_path)
+    sources = scraper_main.build_sources(conn)
+    assert [source.name for source in sources] == ["yad2", "facebook"]
+    assert SourceStateRepo(conn).get("facebook").enabled is False
+    assert SourceStateRepo(conn).get("yad2").enabled is True

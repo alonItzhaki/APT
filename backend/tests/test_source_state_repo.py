@@ -44,3 +44,12 @@ def test_set_enabled_and_all(conn):
     repo.set_enabled("facebook", False)
     assert repo.get("facebook").enabled is False
     assert {state.source for state in repo.all()} == {"yad2", "facebook"}
+
+
+def test_ensure_default_seeds_without_overwriting(conn):
+    repo = SourceStateRepo(conn)
+    repo.ensure_default("facebook", enabled=False)
+    assert repo.get("facebook").enabled is False
+    repo.set_enabled("facebook", True)
+    repo.ensure_default("facebook", enabled=False)
+    assert repo.get("facebook").enabled is True

@@ -67,3 +67,10 @@ class SourceStateRepo:
     def all(self) -> list[SourceState]:
         rows = self._conn.execute("SELECT * FROM source_state ORDER BY source").fetchall()
         return [_row_to_state(row) for row in rows]
+
+    def ensure_default(self, source: str, enabled: bool) -> None:
+        with self._conn:
+            self._conn.execute(
+                "INSERT OR IGNORE INTO source_state (source, enabled) VALUES (?, ?)",
+                (source, int(enabled)),
+            )

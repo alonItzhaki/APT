@@ -14,6 +14,8 @@ from apt.notify.email_channel import EmailChannel
 from apt.notify.notifier import ChannelNotifier
 from apt.notify.telegram_channel import TelegramChannel
 from apt.repo.db import connect, migrate
+from apt.repo.source_state import SourceStateRepo
+from apt.sources.facebook import FacebookSource
 from apt.sources.yad2 import Yad2Source
 
 logger = logging.getLogger(__name__)
@@ -45,6 +47,17 @@ def build_notifier(conn: sqlite3.Connection):
     return LogNotifier()
 
 
+def build_sources(conn: sqlite3.Connection) -> list:
+    state = SourceStateRepo(conn)
+    state.ensure_default("yad2", enabled=True)
+    state.ensure_default("facebook", enabled=False)
+    session_file = os.getenv("APT_FB_SESSION_FILE", "")
+    return [
+        Yad2Source(),
+        FacebookSource(Path(session_file) if session_file else None),
+    ]
+
+
 async def main() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s"
@@ -57,9 +70,9 @@ async def main() -> None:
     logger.info("scraper started (db=%s, interval=%ss)", config.db_path, config.interval_seconds)
     while True:
         # A fresh source per cycle re-discovers the build_id, surviving Yad2 redeploys.
-        source = Yad2Source()
+        sources = build_sources(conn)
         try:
-            events = await run_cycle(conn, [source], notifier, datetime.now(timezone.utc))
+            events = await run_cycle(conn, sources, notifier, datetime.now(timezone.utc))
             logger.info("cycle finished: %d match events", len(events))
         except Exception:
             logger.exception("cycle crashed; retrying next interval")
