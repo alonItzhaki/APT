@@ -93,3 +93,26 @@ def parse_feed_items(feed_data: dict[str, Any]) -> list[Listing]:
                 seen.add(listing.source_id)
                 listings.append(listing)
     return listings
+
+
+def extract_item_detail(response_json: dict[str, Any]) -> dict[str, Any]:
+    return extract_query_data(response_json, "item")
+
+
+def apply_item_detail(listing: Listing, detail: dict[str, Any]) -> Listing:
+    updates: dict[str, Any] = {}
+    in_property = detail.get("inProperty") or {}
+    # 'in' membership: an explicit False is authoritative, a missing key is not.
+    if "includeSecurityRoom" in in_property:
+        updates["has_mamad"] = bool(in_property["includeSecurityRoom"])
+    if "includeElevator" in in_property:
+        updates["has_elevator"] = bool(in_property["includeElevator"])
+    description = (detail.get("metaData") or {}).get("description")
+    if description:
+        updates["description"] = description
+    details = detail.get("additionalDetails") or {}
+    if details.get("squareMeter") is not None:
+        updates["size_sqm"] = int(details["squareMeter"])
+    if details.get("roomsCount") is not None:
+        updates["rooms"] = float(details["roomsCount"])
+    return listing.model_copy(update=updates) if updates else listing

@@ -1,0 +1,26 @@
+{
+  "pageProps": {
+    "dehydratedState": {
+      "queries": [
+        {
+          "queryKey": ["item"],
+          "state": {
+            "data": {
+              "inProperty": {
+                "includeSecurityRoom": true,
+                "includeElevator": false
+              },
+              "metaData": {
+                "description": "דירה מרווחת עם נוף לים"
+              },
+              "additionalDetails": {
+                "squareMeter": 85,
+                "roomsCount": 3.5
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
