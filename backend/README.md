@@ -65,5 +65,5 @@ Configuration via environment variables:
 | `APT_BASE_URL` | `http://localhost:8000` | Base URL for redirects |
 | `APT_BOT_USERNAME` | (none) | Telegram bot username |
 | `APT_ADMIN_EMAILS` | (none) | Comma-separated admin email addresses |
-| `APT_FRONTEND_DIST` | (none) | Frontend static files directory (mounted at `/`) |
+| `APT_FRONTEND_DIST` | (none) | Frontend static files directory (mounted at `/`); set to `frontend/dist` in production |
 | `APT_PORT` | `8000` | Server port |

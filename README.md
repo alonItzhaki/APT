@@ -6,4 +6,5 @@ moment new listings match their saved searches.
 
 - **Specs:** `docs/superpowers/specs/`
 - **Implementation plans:** `docs/superpowers/plans/`
+- **Frontend:** `frontend/` (React + Vite, pnpm; see `frontend/README.md`)
 - **Backend:** `backend/` (Python 3.12, FastAPI later; see `backend/README.md`)
