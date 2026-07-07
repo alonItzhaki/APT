@@ -142,6 +142,7 @@ class Yad2Source:
         url = ITEM_DATA_URL.format(
             build_id=self._build_id, route_slug=route_slug, token=listing.source_id
         )
+        await self._sleep_politely()
         try:
             async with aiohttp.ClientSession(headers=DEFAULT_HEADERS, timeout=self._timeout()) as session:
                 data = await self._get_json(session, url)
