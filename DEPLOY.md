@@ -78,7 +78,7 @@ docker compose ps
 
 # Health endpoint
 curl localhost/healthz
-# Expected: ok
+# Expected: {"status":"ok"}
 
 # HTTPS + domain
 curl https://apt.example.com/healthz
@@ -96,8 +96,8 @@ Back on the VM:
 # Canary: fetches a real Yad2 page and exits 0 if the parser succeeds
 docker compose exec scraper python -m apt.canary
 
-# Admin health page
-# Browse to https://apt.example.com/admin/health
+# Admin health page (sign in first with an APT_ADMIN_EMAILS address)
+# Browse to https://apt.example.com/#/admin
 # Yad2 shows healthy; Facebook shows disabled (expected — real scraping is not yet implemented)
 ```
 
@@ -108,10 +108,10 @@ docker compose exec scraper python -m apt.canary
 **Crontab** — add this to the `ubuntu` user's crontab (`crontab -e`):
 
 ```
-17 3 * * * cd /home/ubuntu/APT && ./deploy/backup.sh >> backups/backup.log 2>&1
+17 3 * * * cd /home/ubuntu/APT && set -a && . ./.env && set +a && ./deploy/backup.sh >> backups/backup.log 2>&1
 ```
 
-`backup.sh` takes a hot SQLite snapshot with `.backup`, gzips it under `backups/`, and — if `APT_BACKUP_BUCKET` is set — uploads it to OCI Object Storage via the `oci` CLI. Local copies older than 14 days are pruned automatically.
+`backup.sh` takes a hot SQLite snapshot with `.backup`, gzips it under `backups/`, and — if `APT_BACKUP_BUCKET` is set — uploads it to OCI Object Storage via the `oci` CLI. Local copies older than 14 days are pruned automatically. The `set -a && . ./.env && set +a` in the crontab line matters: the script reads `APT_BACKUP_BUCKET` from the shell environment, and cron does not load `.env` by itself.
 
 **OCI CLI setup** — install and configure the OCI CLI on the VM (`pip install oci-cli`), then set `APT_BACKUP_BUCKET` in `.env` to your bucket name.
 
