@@ -1,0 +1,59 @@
+services:
+  migrate:
+    build: .
+    env_file: .env
+    command: python -m apt.migrate_main
+    volumes:
+      - ./data:/app/backend/data
+
+  web:
+    build: .
+    env_file: .env
+    environment:
+      APT_BEHIND_PROXY: "1"
+    command: python -m apt.web_main
+    volumes:
+      - ./data:/app/backend/data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  scraper:
+    build: .
+    env_file: .env
+    command: python -m apt.scraper_main
+    volumes:
+      - ./data:/app/backend/data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  bot:
+    profiles: ["bot"]
+    build: .
+    env_file: .env
+    command: python -m apt.bot_main
+    volumes:
+      - ./data:/app/backend/data
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2
+    env_file: .env
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
