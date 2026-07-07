@@ -1,0 +1,97 @@
+{
+  "pageProps": {
+    "dehydratedState": {
+      "queries": [
+        {
+          "queryKey": ["realestate-rent-feed"],
+          "state": {
+            "data": {
+              "pagination": {
+                "totalPages": 2,
+                "total": 3
+              },
+              "lookalike": [
+                {
+                  "token": "lookalike-token-skip",
+                  "price": 1000
+                }
+              ],
+              "feed": [
+                {
+                  "token": "abc123",
+                  "price": 4500,
+                  "address": {
+                    "city":         {"text": "קריית ים"},
+                    "region":       {"text": "חוף הכרמל"},
+                    "neighborhood": {"text": ""},
+                    "street":       {"text": "הרצל"},
+                    "house":        {"floor": 3},
+                    "coords":       {"lat": 32.85, "lon": 35.07}
+                  },
+                  "additionalDetails": {
+                    "roomsCount": 3.5,
+                    "squareMeter": 80
+                  },
+                  "metaData": {
+                    "images": [
+                      "https://img.yad2.co.il/Pics/abc123/1.jpg"
+                    ]
+                  },
+                  "tags": [
+                    {"name": "מעלית"},
+                    {"name": "חניה"}
+                  ]
+                },
+                {
+                  "token": "def456",
+                  "price": 5200,
+                  "address": {
+                    "city":         {"text": "חיפה"},
+                    "region":       {"text": "חוף הכרמל"},
+                    "neighborhood": {"text": "קריית חיים מערבית"},
+                    "street":       {"text": "ביאליק"},
+                    "house":        {"floor": 0},
+                    "coords":       {"lat": 32.82, "lon": 35.01}
+                  },
+                  "additionalDetails": {
+                    "roomsCount": 4.0,
+                    "squareMeter": 95
+                  },
+                  "metaData": {
+                    "images": []
+                  },
+                  "tags": [
+                    {"name": "ממ\"ד"},
+                    {"name": "מעלית"}
+                  ]
+                }
+              ],
+              "promoted": [
+                {
+                  "token": "promo999",
+                  "price": 3800,
+                  "address": {
+                    "city":         {"text": "קריית מוצקין"},
+                    "region":       {"text": "חוף הכרמל"},
+                    "neighborhood": {"text": ""},
+                    "street":       {"text": ""},
+                    "house":        {"floor": null},
+                    "coords":       {"lat": 32.83, "lon": 35.05}
+                  },
+                  "additionalDetails": {
+                    "roomsCount": null,
+                    "squareMeter": null
+                  },
+                  "metaData": {
+                    "images": []
+                  },
+                  "tags": []
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
