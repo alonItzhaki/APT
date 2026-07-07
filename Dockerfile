@@ -1,4 +1,5 @@
 FROM node:20-slim AS frontend
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 WORKDIR /build/frontend
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
