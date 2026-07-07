@@ -77,6 +77,32 @@ MIGRATIONS: list[str] = [
         searched_at TEXT NOT NULL
     );
     """,
+    # v2: exactly-once key widened with (kind, price_key); link tokens for web->bot linking
+    """
+    CREATE TABLE sent_notifications_v2 (
+        alert_id INTEGER NOT NULL REFERENCES alerts(id) ON DELETE CASCADE,
+        listing_id TEXT NOT NULL REFERENCES listings(id) ON DELETE CASCADE,
+        channel TEXT NOT NULL,
+        kind TEXT NOT NULL DEFAULT 'new',
+        price_key INTEGER NOT NULL DEFAULT 0,
+        sent_at TEXT NOT NULL,
+        PRIMARY KEY (alert_id, listing_id, channel, kind, price_key)
+    );
+
+    INSERT INTO sent_notifications_v2 (alert_id, listing_id, channel, sent_at)
+        SELECT alert_id, listing_id, channel, sent_at FROM sent_notifications;
+
+    DROP TABLE sent_notifications;
+
+    ALTER TABLE sent_notifications_v2 RENAME TO sent_notifications;
+
+    CREATE TABLE link_tokens (
+        token TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TEXT NOT NULL,
+        used_at TEXT
+    );
+    """,
 ]
 
 
