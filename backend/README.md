@@ -47,3 +47,23 @@ TELEGRAM_BOT_TOKEN=123:abc APT_DB_PATH=data/apt.db APT_SITE_URL=https://apt.exam
 
 The scraper delivers real notifications when `TELEGRAM_BOT_TOKEN` (Telegram) and/or
 `BREVO_API_KEY` + `APT_EMAIL_FROM` (email) are set; otherwise it logs matches only.
+
+## Running the web API
+
+```bash
+python -m apt.web_main
+```
+
+Configuration via environment variables:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `APT_DB_PATH` | `data/apt.db` | SQLite database path |
+| `APT_SECRET_KEY` | `dev-secret-change-me` | Session signing key |
+| `GOOGLE_CLIENT_ID` | (none) | OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | (none) | OAuth client secret |
+| `APT_BASE_URL` | `http://localhost:8000` | Base URL for redirects |
+| `APT_BOT_USERNAME` | (none) | Telegram bot username |
+| `APT_ADMIN_EMAILS` | (none) | Comma-separated admin email addresses |
+| `APT_FRONTEND_DIST` | (none) | Frontend static files directory (mounted at `/`) |
+| `APT_PORT` | `8000` | Server port |
