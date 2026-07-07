@@ -12,8 +12,9 @@ export function ListingCard({ listing }: { listing: Listing }) {
   if (listing.floor != null) badges.push(`קומה ${listing.floor}`);
   if (listing.has_mamad === true) badges.push('ממ"ד');
   if (listing.has_elevator === true) badges.push("מעלית");
+  const description = listing.description ?? "";
   const snippet =
-    listing.description.length > 120 ? `${listing.description.slice(0, 120)}...` : listing.description;
+    description.length > 120 ? `${description.slice(0, 120)}...` : description;
   return (
     <div className="card">
       {listing.photo_urls[0] && (

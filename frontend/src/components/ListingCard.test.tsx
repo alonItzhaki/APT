@@ -26,3 +26,8 @@ test("handles missing price and photo", () => {
   render(<ListingCard listing={{ ...LISTING, price: null, photo_urls: [] }} />);
   expect(screen.getByText("מחיר לא צוין")).toBeInTheDocument();
 });
+
+test("handles null description without crashing", () => {
+  render(<ListingCard listing={{ ...LISTING, description: null as unknown as string }} />);
+  expect(screen.getByText("₪5,000")).toBeInTheDocument();
+});

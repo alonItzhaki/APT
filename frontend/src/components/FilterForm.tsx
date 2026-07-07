@@ -75,13 +75,13 @@ export function FilterForm({ value, onChange, onSubmit, submitLabel }: Props) {
       {number("min_rooms", "חדרים מ-")}
       {number("max_rooms", "חדרים עד")}
       {number("min_size_sqm", 'גודל מינימלי במ"ר')}
-      <label className="checkbox">
-        <input type="checkbox" checked={value.require_mamad}
+      <label htmlFor="require_mamad" className="checkbox">
+        <input id="require_mamad" type="checkbox" checked={value.require_mamad}
                onChange={(event) => set({ require_mamad: event.target.checked })} />
         ממ"ד
       </label>
-      <label className="checkbox">
-        <input type="checkbox" checked={value.require_elevator}
+      <label htmlFor="require_elevator" className="checkbox">
+        <input id="require_elevator" type="checkbox" checked={value.require_elevator}
                onChange={(event) => set({ require_elevator: event.target.checked })} />
         מעלית
       </label>

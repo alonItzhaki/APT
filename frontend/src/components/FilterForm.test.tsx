@@ -17,6 +17,8 @@ test("submit disabled until city filled, calls onSubmit", async () => {
   expect(submit).toBeEnabled();
   await userEvent.click(submit);
   expect(onSubmit).toHaveBeenCalled();
+  expect(screen.getByLabelText('ממ"ד')).not.toBeChecked();
+  expect(screen.getByLabelText("מעלית")).not.toBeChecked();
 });
 
 test("filtersToSearchParams drops empties and parses numbers", () => {
