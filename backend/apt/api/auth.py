@@ -75,6 +75,8 @@ async def callback(request: Request, code: str, state: str) -> RedirectResponse:
     if not expected or state != expected:
         raise HTTPException(status_code=400, detail="bad oauth state")
     userinfo = await _exchange_code(app_state.config, code)
+    if userinfo.get("email_verified") is not True:
+        raise HTTPException(status_code=403, detail="google email not verified")
     now = app_state.now_fn()
     user = UserRepo(app_state.conn).upsert_google_user(userinfo["sub"], userinfo["email"], now)
     token = sign_session(user.id, now + timedelta(days=SESSION_TTL_DAYS), app_state.config.secret_key)

@@ -6,7 +6,7 @@ from apt.repo.users import UserRepo
 from tests.conftest import FIXED_NOW
 
 
-def make_google_session(token_status=200, userinfo_status=200):
+def make_google_session(token_status=200, userinfo_status=200, email_verified=True):
     def json_response(status, payload):
         response = MagicMock()
         response.status = status
@@ -19,7 +19,10 @@ def make_google_session(token_status=200, userinfo_status=200):
 
     session = MagicMock()
     session.post = MagicMock(return_value=json_response(token_status, {"access_token": "at-1"}))
-    session.get = MagicMock(return_value=json_response(userinfo_status, {"sub": "g-123", "email": "u@example.com"}))
+    session.get = MagicMock(return_value=json_response(
+        userinfo_status,
+        {"sub": "g-123", "email": "u@example.com", "email_verified": email_verified},
+    ))
     session_ctx = MagicMock()
     session_ctx.__aenter__ = AsyncMock(return_value=session)
     session_ctx.__aexit__ = AsyncMock(return_value=False)
@@ -69,6 +72,14 @@ def test_callback_google_error_returns_502(client):
     with patch("apt.api.auth.aiohttp.ClientSession", return_value=session_ctx):
         response = client.get("/api/auth/callback?code=c&state=st-1", follow_redirects=False)
     assert response.status_code == 502
+
+
+def test_callback_rejects_unverified_email(client):
+    session_ctx, _ = make_google_session(email_verified=False)
+    client.cookies.set("apt_oauth_state", "st-1")
+    with patch("apt.api.auth.aiohttp.ClientSession", return_value=session_ctx):
+        response = client.get("/api/auth/callback?code=c&state=st-1", follow_redirects=False)
+    assert response.status_code == 403
 
 
 def test_me_requires_auth(client):

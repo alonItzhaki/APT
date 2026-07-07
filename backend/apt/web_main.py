@@ -18,7 +18,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     config = load_config()
     config.db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = connect(config.db_path)
+    conn = connect(config.db_path, check_same_thread=False)  # FastAPI runs sync endpoints in a threadpool; sqlite objects cross threads here.
     migrate(conn)
     app = create_app(conn, config)
     port = int(os.getenv("APT_PORT", "8000"))
